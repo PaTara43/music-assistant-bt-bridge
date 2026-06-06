@@ -1,0 +1,47 @@
+services:
+
+  music-assistant:
+    container_name: music-assistant
+    image: ghcr.io/music-assistant/server:${MA_VERSION:-2.8.9}
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - SYS_ADMIN
+      - DAC_READ_SEARCH
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - ./music-assistant/data:/data
+    environment:
+      - LOG_LEVEL=info
+
+  sendspin-bt-bridge:
+    container_name: sendspin-bt-bridge
+    image: ghcr.io/trudenboy/sendspin-bt-bridge:${SENDSPIN_VERSION:-2.71.2}
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - music-assistant
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+      - /var/lib/bluetooth:/var/lib/bluetooth
+      - /run/user/${AUDIO_UID:-1000}/pulse:/run/user/${AUDIO_UID:-1000}/pulse
+      - ./bt-bridge:/config
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - WEB_PORT=8094
+      - BASE_LISTEN_PORT=8928
+      - CONFIG_DIR=/config
+      - AUDIO_UID=${AUDIO_UID:-1000}
+      - AUDIO_GID=${AUDIO_UID:-1000}
+      - PULSE_SERVER=unix:/run/user/${AUDIO_UID:-1000}/pulse/native
+      - XDG_RUNTIME_DIR=/run/user/${AUDIO_UID:-1000}
+      - PULSE_LATENCY_MSEC=${PULSE_LATENCY_MSEC:-300}
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    security_opt:
+      - apparmor:unconfined
+      - seccomp:unconfined
