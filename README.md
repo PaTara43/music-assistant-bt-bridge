@@ -43,7 +43,8 @@ WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload
-systemctl --user enable --now pulseaudio-headless.service
+systemctl --user enable pulseaudio-headless.service
+systemctl --user start pulseaudio-headless.service
 ```
 
 Verify:
